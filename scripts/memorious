@@ -89,7 +89,7 @@ if __name__ == "__main__":
 	data['comment'] = ' '.join(args.comment)
 
     if args.action == 'put':
-	if ''.join([args.domain, args.username, args.comment]) == '':
+	if ''.join([args.domain, args.username, ' '.join(args.comment)]) == '':
 	    parser.print_help()
 	    sys.exit()
 
