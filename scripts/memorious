@@ -1,0 +1,131 @@
+#!/usr/bin/python2
+#
+# Copyright (C) 2010 Vincent Ollivier <contact@vincentollivier.com>
+#
+# This file is part of Memorious.
+#
+# Memorious is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+import argparse
+import errno
+import os
+import sys
+
+from getpass import getpass
+
+from memorious.store import Store, Password, KeyFile
+
+if (sys.version_info[0] != 2) or (sys.version_info[1] < 7):
+    if sys.version_info[0] > 2:
+	print('Version 2.7+, and not 3.0+ needed.')
+	sys.exit(1)
+    else:
+	print 'Version 2.7+ needed.'
+	sys.exit(1)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Manage website accounts.')
+    subparsers = parser.add_subparsers(help="try 'SUB-COMMAND --help'",
+				       dest='action')
+
+    parser.add_argument('--dumpfile', default='~/.memorious/store.dump')
+    parser.add_argument('--keyfile', default='/tmp/memorious.key')
+    
+    parser_new = subparsers.add_parser('new', 
+				       help='create a new key file')
+    parser_new.add_argument('--key-size', default=256, type=int)
+    parser_new.add_argument('--file-size', default=1024, type=int)
+    
+    parser_get = subparsers.add_parser('get', 
+				       help='get stored accounts')
+    parser_get.add_argument('--domain', default='')
+    parser_get.add_argument('--username', default='')
+    parser_get.add_argument('--comment', default='', nargs='*')
+
+    parser_put = subparsers.add_parser('put', 
+				       help='store a new account')
+    parser_put.add_argument('--domain', default='')
+    parser_put.add_argument('--username', default='')
+    parser_put.add_argument('--comment', default='', nargs='*')
+    parser_put.add_argument('--password', nargs='?', const='')
+    parser_put.add_argument('--password-length', default=16)
+    parser_put.add_argument('--secure', action='store_true')
+
+    parser_del = subparsers.add_parser('del', 
+				       help='delete stored accounts')
+    parser_del.add_argument('ids', nargs='+')
+
+    args = parser.parse_args()
+   
+    dump_file = os.path.expanduser(args.dumpfile)
+    key_file = os.path.expanduser(args.keyfile)
+
+    if args.action == 'new':
+	if os.path.isfile(key_file):
+	    raise IOError, (errno.EEXIST, "Key file exist: '%s'" % key_file)
+	KeyFile.generate(key_file, args.key_size, args.file_size)
+	print "Key file successfully created at '%s'." % key_file
+	print "Store it somewhere safe and don't lose it!"
+	os.makedirs(os.path.dirname(dump_file), 0700)
+	sys.exit()
+
+    data = {}
+    if 'domain' in args and args.domain is not None:
+	data['domain'] = args.domain
+    if 'username' in args and args.username is not None:
+	data['username'] = args.username
+    if 'comment' in args and args.comment is not None:
+	data['comment'] = ' '.join(args.comment)
+
+    if args.action == 'put':
+	if ''.join([args.domain, args.username, args.comment]) == '':
+	    parser.print_help()
+	    sys.exit()
+
+	if args.password is None:
+	    password = Password.generate(args.password_length, args.secure)
+	    print 'Your password is: %s' % password
+	elif args.password == '':
+	    password = Password(getpass())
+	else:
+	    password = Password(args.password)
+
+	data['password'] = str(password)
+	
+	with Store.open(dump_file, key_file) as store:
+	    store.put(**data)
+
+    elif args.action == 'get':
+	with Store.open(dump_file, key_file) as store:
+	    count = 0
+	    cols = ['domain', 'username', 'password']
+	    print 'Ids'.ljust(4),
+	    print ' '.join(('%ss' % key).ljust(25).title() for key in cols)
+	    print
+	    for row in store.get(**data):
+		count += 1
+		line = str(row['id']).ljust(5)
+		line += ' '.join(row[key].ljust(25) for key in cols)
+		line += row['comment']
+		print line
+	    if not count:
+		sys.exit('No results.')
+    
+    elif args.action == 'del':
+	with Store.open(dump_file, key_file) as store:
+	    try:
+		for id in args.ids:
+		    store.delete(id)
+	    except TypeError:
+		print 'Empty database!'
