@@ -18,6 +18,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import argparse
+import curses
 import errno
 import os
 import sys
@@ -72,6 +73,7 @@ if __name__ == "__main__":
     key_file = os.path.expanduser(args.keyfile)
 
     if args.action == 'new':
+	# Create a new key file for a new database
 	if os.path.isfile(key_file):
 	    raise IOError, (errno.EEXIST, "Key file exist: '%s'" % key_file)
 	KeyFile.generate(key_file, args.key_size, args.file_size)
@@ -89,10 +91,12 @@ if __name__ == "__main__":
 	data['comment'] = ' '.join(args.comment)
 
     if args.action == 'put':
+	# Put a new account in the database
 	if ''.join([args.domain, args.username, ' '.join(args.comment)]) == '':
 	    parser.print_help()
 	    sys.exit()
-
+	
+	# Get or generate the account's password
 	if args.password is None:
 	    password = Password.generate(args.password_length, args.secure)
 	    print 'Your password is: %s' % password
@@ -104,25 +108,42 @@ if __name__ == "__main__":
 	data['password'] = str(password)
 	
 	with Store.open(dump_file, key_file) as store:
+	    # Put account information in database
 	    store.put(**data)
-
+    
     elif args.action == 'get':
+	# Get accounts stored in the database
 	with Store.open(dump_file, key_file) as store:
-	    count = 0
-	    cols = ['domain', 'username', 'password']
-	    print 'Ids'.ljust(4),
-	    print ' '.join(('%ss' % key).ljust(25).title() for key in cols)
-	    print
-	    for row in store.get(**data):
-		count += 1
-		line = str(row['id']).ljust(5)
-		line += ' '.join(row[key].ljust(25) for key in cols)
-		line += row['comment']
-		print line
-	    if not count:
+	    # Construct a dictionary for the results
+	    keys = ['id', 'domain', 'username', 'password', 'comment']
+	    results = dict(zip(keys, ([('%ss' % k).title()] for k in keys)))
+	    
+	    # Execute the query and fetch the results
+	    response = list(store.get(**data))
+	    if not response:
 		sys.exit('No results.')
+	    for row in response:
+		for k in keys:
+		    results[k].append(str(row[k]))
+	    
+	    # Get the window's width
+	    window = curses.initscr()
+	    max_width = window.getmaxyx()[1]
+	    curses.endwin()
+
+	    # Divide the space between each column to fill the window
+	    lcols = dict(zip(keys, (max(map(len, results[k])) for k in keys)))
+	    while sum(lcols.values()) + len(keys) * 2 - 2 > max_width:
+		lcols[max(zip(lcols.values(), lcols.keys()))[1]] -= 1
+
+	    # Print the table
+	    for i in xrange(len(response) + 1):
+		print '  '.join(results[k][i].ljust(lcols[k]) for k in keys)
+		if not i:
+		    print '-' * (sum(lcols.values()) + len(keys) * 2 - 2)
     
     elif args.action == 'del':
+	# Remove an account from the database
 	with Store.open(dump_file, key_file) as store:
 	    try:
 		for id in args.ids:
