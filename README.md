@@ -53,28 +53,28 @@ default.
 Listing website accounts use the same arguments:
 
     $ memorious get --domain example.org --username bob  
-    Ids  Domains                   Usernames                 Passwords                
-
-    1    example.org               bob                       H7Q2qZN6cjxvTase         
+    Ids  Domains      Usernames  Passwords         Comments       
+    -------------------------------------------------------
+    1    example.org  bob        H7Q2qZN6cjxvTase         
 
     $ memorious get --domain example.org               
-    Ids  Domains                   Usernames                 Passwords                
-
-    1    example.org               bob                       H7Q2qZN6cjxvTase         
-    2    example.org               alice                     qkUJ3WIV08ERGLov         
+    Ids  Domains      Usernames  Passwords         Comments       
+    -------------------------------------------------------
+    1    example.org  bob        H7Q2qZN6cjxvTase         
+    2    example.org  alice      qkUJ3WIV08ERGLov         
 
     $ memorious get --username bob 
-    Ids  Domains                   Usernames                 Passwords                
-
-    1    example.org               bob                       H7Q2qZN6cjxvTase         
-    3    test.com                  bob                       oYf9XNKe3B4U6QTV         
+    Ids  Domains      Usernames  Passwords         Comments       
+    -------------------------------------------------------
+    1    example.org  bob        H7Q2qZN6cjxvTase         
+    3    test.com     bob        oYf9XNKe3B4U6QTV         
 
     $ memorious get               
-    Ids  Domains                   Usernames                 Passwords                
-
-    1    example.org               bob                       H7Q2qZN6cjxvTase         
-    2    example.org               alice                     qkUJ3WIV08ERGLov         
-    3    test.com                  bob                       oYf9XNKe3B4U6QTV
+    Ids  Domains      Usernames  Passwords         Comments       
+    -------------------------------------------------------
+    1    example.org  bob        H7Q2qZN6cjxvTase         
+    2    example.org  alice      qkUJ3WIV08ERGLov         
+    3    test.com     bob        oYf9XNKe3B4U6QTV
 
 
 Finally you can delete a row by its id:
