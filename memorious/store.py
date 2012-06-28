@@ -58,7 +58,7 @@ class Store(object):
             # Restore previous database from dump
             self._con.executescript(dump)
         else:
-            print 'Creating a new database ...'
+            print('Creating a new database ...')
             self._con.execute("""
                 CREATE TABLE slots(
                     id INTEGER PRIMARY KEY,

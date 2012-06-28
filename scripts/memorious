@@ -69,8 +69,8 @@ if __name__ == "__main__":
         if os.path.isfile(key_file):
             raise IOError, (errno.EEXIST, "Key file exist: '%s'" % key_file)
         KeyFile.generate(key_file, args.key_size, args.file_size)
-        print "Key file successfully created at '%s'." % key_file
-        print "Store it somewhere safe and don't lose it!"
+        print("Key file successfully created at '%s'." % key_file)
+        print("Store it somewhere safe and don't lose it!")
         os.makedirs(os.path.dirname(dump_file), 0700)
         sys.exit()
 
@@ -91,7 +91,7 @@ if __name__ == "__main__":
         # Get or generate the account's password
         if args.password is None:
             password = Password.generate(args.password_length, args.secure)
-            print 'Your password is: %s' % password
+            print('Your password is: %s' % password)
         elif args.password == '':
             password = Password(getpass())
         else:
@@ -130,9 +130,9 @@ if __name__ == "__main__":
 
             # Print the table
             for i in xrange(len(response) + 1):
-                print '  '.join(results[k][i].ljust(lcols[k]) for k in keys)
+                print('  '.join(results[k][i].ljust(lcols[k]) for k in keys))
                 if not i:
-                    print '-' * (sum(lcols.values()) + len(keys) * 2 - 2)
+                    print('-' * (sum(lcols.values()) + len(keys) * 2 - 2))
     
     elif args.action == 'del':
         # Remove an account from the database
