@@ -27,14 +27,6 @@ from getpass import getpass
 
 from memorious.store import Store, Password, KeyFile
 
-if (sys.version_info[0] != 2) or (sys.version_info[1] < 7):
-    if sys.version_info[0] > 2:
-	print('Version 2.7+, and not 3.0+ needed.')
-	sys.exit(1)
-    else:
-	print 'Version 2.7+ needed.'
-	sys.exit(1)
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Manage website accounts.')
     subparsers = parser.add_subparsers(help="try 'SUB-COMMAND --help'",
