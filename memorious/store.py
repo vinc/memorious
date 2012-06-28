@@ -51,7 +51,7 @@ class Store(object):
                 # operating in cipher feedback (CFB) mode
                 cipher = Cipher.new(self._key, Cipher.MODE_CFB)
                 c = f.read(cipher.block_size)
-                while c != '':
+                while c:
                     dump = '%s%s' % (dump, cipher.decrypt(c).decode())
                     c = f.read(cipher.block_size)
                     cipher = Cipher.new(self._key, Cipher.MODE_CFB, cipher.IV)
