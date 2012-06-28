@@ -137,7 +137,7 @@ class KeyFile(object):
     def key(self):
         try:
             with open(self.path) as f:
-                return f.read(self.size / 8)
+                return f.read(self.size // 8)
         except IOError:
             raise FileNotFoundError("No such key file: '%s'" % self.path)
 
