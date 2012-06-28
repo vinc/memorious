@@ -46,7 +46,7 @@ class Store(object):
         self._key = KeyFile(key_file, key_size).key
         self._path = encrypted_dump_file
         if os.path.isfile(self._path):
-            with open(self._path) as f:
+            with open(self._path, 'rb') as f:
                 # Need a block cipher encryption algorithm
                 # operating in cipher feedback (CFB) mode
                 cipher = Cipher.new(self._key, Cipher.MODE_CFB)
@@ -136,7 +136,7 @@ class KeyFile(object):
     @property
     def key(self):
         try:
-            with open(self.path) as f:
+            with open(self.path, 'rb') as f:
                 return f.read(self.size // 8)
         except IOError:
             raise FileNotFoundError("No such key file: '%s'" % self.path)
