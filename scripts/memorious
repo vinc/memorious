@@ -67,7 +67,7 @@ if __name__ == "__main__":
     if args.action == 'new':
         # Create a new key file for a new database
         if os.path.isfile(key_file):
-            raise IOError, (errno.EEXIST, "Key file exist: '%s'" % key_file)
+            raise FileExistsError("Key file exist: '%s'" % key_file)
         KeyFile.generate(key_file, args.key_size, args.file_size)
         print("Key file successfully created at '%s'." % key_file)
         print("Store it somewhere safe and don't lose it!")

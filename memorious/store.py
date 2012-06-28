@@ -139,14 +139,14 @@ class KeyFile(object):
             with open(self.path) as f:
                 return f.read(self.size / 8)
         except IOError:
-            raise IOError, (errno.ENOENT, "No such key file: '%s'" % self.path)
+            raise FileNotFoundError("No such key file: '%s'" % self.path)
 
     @classmethod
     def generate(cls, path, key_size=256, file_size=1024):
         """Generate a new key file."""
         assert file_size >= key_size
         if os.path.isfile(path):
-            raise IOError, (errno.EEXIST, "Key file exist: '%s'" % path)
+            raise FileExistsError("Key file exist: '%s'" % key_file)
         with open(path, 'wb') as f:
             f.write(os.urandom(file_size))
         return cls(path, key_size)
