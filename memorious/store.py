@@ -172,7 +172,7 @@ class Password(object):
 
         # Shuffle the alphabet a random number of times
         perm_list = list(alphabet)
-        for i in xrange(rand.randint(128, 256)):
+        for i in range(rand.randint(128, 256)):
             rand.shuffle(perm_list)
 
         # Randomly choose the password in this alphabet

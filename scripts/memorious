@@ -129,7 +129,7 @@ if __name__ == "__main__":
                 lcols[max(zip(lcols.values(), lcols.keys()))[1]] -= 1
 
             # Print the table
-            for i in xrange(len(response) + 1):
+            for i in range(len(response) + 1):
                 print('  '.join(results[k][i].ljust(lcols[k]) for k in keys))
                 if not i:
                     print('-' * (sum(lcols.values()) + len(keys) * 2 - 2))
