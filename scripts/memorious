@@ -71,7 +71,7 @@ if __name__ == "__main__":
         KeyFile.generate(key_file, args.key_size, args.file_size)
         print("Key file successfully created at '%s'." % key_file)
         print("Store it somewhere safe and don't lose it!")
-        os.makedirs(os.path.dirname(dump_file), 0700)
+        os.makedirs(os.path.dirname(dump_file), 0o700)
         sys.exit()
 
     data = {}
