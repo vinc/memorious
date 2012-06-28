@@ -30,24 +30,24 @@ from memorious.store import Store, Password, KeyFile
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Manage website accounts.')
     subparsers = parser.add_subparsers(help="try 'SUB-COMMAND --help'",
-				       dest='action')
+                                       dest='action')
 
     parser.add_argument('--dumpfile', default='~/.memorious/store.dump')
     parser.add_argument('--keyfile', default='/tmp/memorious.key')
     
     parser_new = subparsers.add_parser('new', 
-				       help='create a new key file')
+                                       help='create a new key file')
     parser_new.add_argument('--key-size', default=256, type=int)
     parser_new.add_argument('--file-size', default=1024, type=int)
     
     parser_get = subparsers.add_parser('get', 
-				       help='get stored accounts')
+                                       help='get stored accounts')
     parser_get.add_argument('--domain', default='')
     parser_get.add_argument('--username', default='')
     parser_get.add_argument('--comment', default='', nargs='*')
 
     parser_put = subparsers.add_parser('put', 
-				       help='store a new account')
+                                       help='store a new account')
     parser_put.add_argument('--domain', default='')
     parser_put.add_argument('--username', default='')
     parser_put.add_argument('--comment', default='', nargs='*')
@@ -56,7 +56,7 @@ if __name__ == "__main__":
     parser_put.add_argument('--secure', action='store_true')
 
     parser_del = subparsers.add_parser('del', 
-				       help='delete stored accounts')
+                                       help='delete stored accounts')
     parser_del.add_argument('ids', nargs='+')
 
     args = parser.parse_args()
@@ -65,77 +65,77 @@ if __name__ == "__main__":
     key_file = os.path.expanduser(args.keyfile)
 
     if args.action == 'new':
-	# Create a new key file for a new database
-	if os.path.isfile(key_file):
-	    raise IOError, (errno.EEXIST, "Key file exist: '%s'" % key_file)
-	KeyFile.generate(key_file, args.key_size, args.file_size)
-	print "Key file successfully created at '%s'." % key_file
-	print "Store it somewhere safe and don't lose it!"
-	os.makedirs(os.path.dirname(dump_file), 0700)
-	sys.exit()
+        # Create a new key file for a new database
+        if os.path.isfile(key_file):
+            raise IOError, (errno.EEXIST, "Key file exist: '%s'" % key_file)
+        KeyFile.generate(key_file, args.key_size, args.file_size)
+        print "Key file successfully created at '%s'." % key_file
+        print "Store it somewhere safe and don't lose it!"
+        os.makedirs(os.path.dirname(dump_file), 0700)
+        sys.exit()
 
     data = {}
     if 'domain' in args and args.domain is not None:
-	data['domain'] = args.domain
+        data['domain'] = args.domain
     if 'username' in args and args.username is not None:
-	data['username'] = args.username
+        data['username'] = args.username
     if 'comment' in args and args.comment is not None:
-	data['comment'] = ' '.join(args.comment)
+        data['comment'] = ' '.join(args.comment)
 
     if args.action == 'put':
-	# Put a new account in the database
-	if ''.join([args.domain, args.username, ' '.join(args.comment)]) == '':
-	    parser.print_help()
-	    sys.exit()
-	
-	# Get or generate the account's password
-	if args.password is None:
-	    password = Password.generate(args.password_length, args.secure)
-	    print 'Your password is: %s' % password
-	elif args.password == '':
-	    password = Password(getpass())
-	else:
-	    password = Password(args.password)
+        # Put a new account in the database
+        if ''.join([args.domain, args.username, ' '.join(args.comment)]) == '':
+            parser.print_help()
+            sys.exit()
+        
+        # Get or generate the account's password
+        if args.password is None:
+            password = Password.generate(args.password_length, args.secure)
+            print 'Your password is: %s' % password
+        elif args.password == '':
+            password = Password(getpass())
+        else:
+            password = Password(args.password)
 
-	data['password'] = str(password)
-	
-	with Store.open(dump_file, key_file) as store:
-	    # Put account information in database
-	    store.put(**data)
+        data['password'] = str(password)
+        
+        with Store.open(dump_file, key_file) as store:
+            # Put account information in database
+            store.put(**data)
     
     elif args.action == 'get':
-	# Get accounts stored in the database
-	with Store.open(dump_file, key_file) as store:
-	    # Construct a dictionary for the results
-	    keys = ['id', 'domain', 'username', 'password', 'comment']
-	    results = dict(zip(keys, ([('%ss' % k).title()] for k in keys)))
-	    
-	    # Execute the query and fetch the results
-	    response = list(store.get(**data))
-	    if not response:
-		sys.exit('No results.')
-	    for row in response:
-		for k in keys:
-		    results[k].append(str(row[k]))
-	    
-	    # Get the window's width
-	    window = curses.initscr()
-	    max_width = window.getmaxyx()[1]
-	    curses.endwin()
+        # Get accounts stored in the database
+        with Store.open(dump_file, key_file) as store:
+            # Construct a dictionary for the results
+            keys = ['id', 'domain', 'username', 'password', 'comment']
+            results = dict(zip(keys, ([('%ss' % k).title()] for k in keys)))
+            
+            # Execute the query and fetch the results
+            response = list(store.get(**data))
+            if not response:
+                sys.exit('No results.')
+            for row in response:
+                for k in keys:
+                    results[k].append(str(row[k]))
+            
+            # Get the window's width
+            window = curses.initscr()
+            max_width = window.getmaxyx()[1]
+            curses.endwin()
 
-	    # Divide the space between each column to fill the window
-	    lcols = dict(zip(keys, (max(map(len, results[k])) for k in keys)))
-	    while sum(lcols.values()) + len(keys) * 2 - 2 > max_width:
-		lcols[max(zip(lcols.values(), lcols.keys()))[1]] -= 1
+            # Divide the space between each column to fill the window
+            lcols = dict(zip(keys, (max(map(len, results[k])) for k in keys)))
+            while sum(lcols.values()) + len(keys) * 2 - 2 > max_width:
+                lcols[max(zip(lcols.values(), lcols.keys()))[1]] -= 1
 
-	    # Print the table
-	    for i in xrange(len(response) + 1):
-		print '  '.join(results[k][i].ljust(lcols[k]) for k in keys)
-		if not i:
-		    print '-' * (sum(lcols.values()) + len(keys) * 2 - 2)
+            # Print the table
+            for i in xrange(len(response) + 1):
+                print '  '.join(results[k][i].ljust(lcols[k]) for k in keys)
+                if not i:
+                    print '-' * (sum(lcols.values()) + len(keys) * 2 - 2)
     
     elif args.action == 'del':
-	# Remove an account from the database
-	with Store.open(dump_file, key_file) as store:
-	    for id in args.ids:
-		store.delete(id)
+        # Remove an account from the database
+        with Store.open(dump_file, key_file) as store:
+            for id in args.ids:
+                store.delete(id)
