@@ -27,6 +27,22 @@ from getpass import getpass
 
 from memorious.store import Store, Password, KeyFile
 
+def get_password(args):
+    if args.password is None:
+        password = Password.generate(args.password_length, args.secure)
+        print('Your password is: %s' % password)
+        return password
+    elif args.password == '':
+        return Password(getpass())
+    else:
+        return Password(args.password)
+
+def get_width():
+    window = curses.initscr()
+    width = window.getmaxyx()[1]
+    curses.endwin()
+    return width
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Manage website accounts.')
     subparsers = parser.add_subparsers(help="try 'SUB-COMMAND --help'",
@@ -34,33 +50,29 @@ if __name__ == "__main__":
 
     parser.add_argument('--dumpfile', default='~/.memorious/store.dump')
     parser.add_argument('--keyfile', default='/tmp/memorious.key')
-    
-    parser_new = subparsers.add_parser('new', 
-                                       help='create a new key file')
-    parser_new.add_argument('--key-size', default=256, type=int)
-    parser_new.add_argument('--file-size', default=1024, type=int)
-    
-    parser_get = subparsers.add_parser('get', 
-                                       help='get stored accounts')
-    parser_get.add_argument('--domain', default='')
-    parser_get.add_argument('--username', default='')
-    parser_get.add_argument('--comment', default='', nargs='*')
 
-    parser_put = subparsers.add_parser('put', 
-                                       help='store a new account')
-    parser_put.add_argument('--domain', default='')
-    parser_put.add_argument('--username', default='')
-    parser_put.add_argument('--comment', default='', nargs='*')
-    parser_put.add_argument('--password', nargs='?', const='')
-    parser_put.add_argument('--password-length', default=16)
-    parser_put.add_argument('--secure', action='store_true')
+    subparser = subparsers.add_parser('new', help='create a new key file')
+    subparser.add_argument('--key-size', default=256, type=int)
+    subparser.add_argument('--file-size', default=1024, type=int)
 
-    parser_del = subparsers.add_parser('del', 
-                                       help='delete stored accounts')
-    parser_del.add_argument('ids', nargs='+')
+    subparser = subparsers.add_parser('get', help='get stored accounts')
+    subparser.add_argument('--domain', default='')
+    subparser.add_argument('--username', default='')
+    subparser.add_argument('--comment', default='', nargs='*')
+
+    subparser = subparsers.add_parser('put', help='store a new account')
+    subparser.add_argument('--domain', default='')
+    subparser.add_argument('--username', default='')
+    subparser.add_argument('--comment', default='', nargs='*')
+    subparser.add_argument('--password', nargs='?', const='')
+    subparser.add_argument('--password-length', default=16)
+    subparser.add_argument('--secure', action='store_true')
+
+    subparser = subparsers.add_parser('del', help='delete stored accounts')
+    subparser.add_argument('ids', nargs='+')
 
     args = parser.parse_args()
-   
+
     dump_file = os.path.expanduser(args.dumpfile)
     key_file = os.path.expanduser(args.keyfile)
 
@@ -89,31 +101,11 @@ if __name__ == "__main__":
 
     try:
         with Store.open(dump_file, key_file) as store:
-            if args.action == 'put': # Put a new account in the database
-                if not data:
-                    parser.print_help()
-                    sys.exit()
-                
-                # Get or generate the account's password
-                if args.password is None:
-                    password = Password.generate(args.password_length,
-                                                 args.secure)
-                    print('Your password is: %s' % password)
-                elif args.password == '':
-                    password = Password(getpass())
-                else:
-                    password = Password(args.password)
-
-                data['password'] = str(password)
-                
-                # Put account information in database
-                store.put(**data)
-            
-            elif args.action == 'get': # Get accounts stored in the database
+            if args.action == 'get': # Get accounts stored in the database
                 # Construct a dictionary for the results
                 keys = ['id', 'domain', 'username', 'password', 'comment']
-                res = dict(zip(keys, ([('%ss' % k).title()] for k in keys)))
-                
+                res = dict(zip(keys, ([k.title() + 's'] for k in keys)))
+
                 # Execute the query and fetch the results
                 accounts = list(store.get(**data))
                 if not accounts:
@@ -121,15 +113,13 @@ if __name__ == "__main__":
                 for row in accounts:
                     for k in keys:
                         res[k].append(str(row[k]))
-                
+
                 # Get the window's width
-                window = curses.initscr()
-                max_width = window.getmaxyx()[1]
-                curses.endwin()
+                width = get_width()
 
                 # Divide the space between each column to fill the window
                 lcols = dict(zip(keys, (max(map(len, res[k])) for k in keys)))
-                while sum(lcols.values()) + len(keys) * 2 - 2 > max_width:
+                while sum(lcols.values()) + len(keys) * 2 - 2 > width:
                     lcols[max(zip(lcols.values(), lcols.keys()))[1]] -= 1
 
                 # Print the table
@@ -137,7 +127,18 @@ if __name__ == "__main__":
                     print('  '.join(res[k][i].ljust(lcols[k]) for k in keys))
                     if not i:
                         print('-' * (sum(lcols.values()) + len(keys) * 2 - 2))
-        
+
+            elif args.action == 'put': # Put a new account in the database
+                if not data:
+                    parser.print_help()
+                    sys.exit()
+
+                # Get or generate the account's password
+                data['password'] = get_password(args)
+
+                # Put account information in database
+                store.put(**data)
+
             elif args.action == 'del': # Remove an account from the database
                 for id in args.ids:
                     store.delete(id)
