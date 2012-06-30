@@ -163,7 +163,7 @@ class Password(object):
 
     @classmethod
     def generate(cls, length, secure):
-        alphabet = string.letters + string.digits
+        alphabet = string.ascii_letters + string.digits
         if secure:
             alphabet += string.punctuation
 
