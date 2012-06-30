@@ -66,9 +66,14 @@ if __name__ == "__main__":
 
     if args.action == 'new':
         # Create a new key file for a new database
-        if os.path.isfile(key_file):
-            raise FileExistsError("Key file exist: '%s'" % key_file)
-        KeyFile.generate(key_file, args.key_size, args.file_size)
+        try:
+            KeyFile.generate(key_file, args.key_size, args.file_size)
+        except IOError as e:
+            if e.errno == errno.EEXIST:
+                sys.stderr.write('%s\n' % e.strerror)
+                sys.exit(errno.EEXIST)
+            else:
+                raise
         print("Key file successfully created at '%s'." % key_file)
         print("Store it somewhere safe and don't lose it!")
         os.makedirs(os.path.dirname(dump_file), 0o700)
@@ -82,60 +87,64 @@ if __name__ == "__main__":
     if 'comment' in args and args.comment is not None:
         data['comment'] = ' '.join(args.comment)
 
-    if args.action == 'put':
-        # Put a new account in the database
-        if ''.join([args.domain, args.username, ' '.join(args.comment)]) == '':
-            parser.print_help()
-            sys.exit()
+    try:
+        with Store.open(dump_file, key_file) as store:
+            if args.action == 'put': # Put a new account in the database
+                if not data:
+                    parser.print_help()
+                    sys.exit()
+                
+                # Get or generate the account's password
+                if args.password is None:
+                    password = Password.generate(args.password_length,
+                                                 args.secure)
+                    print('Your password is: %s' % password)
+                elif args.password == '':
+                    password = Password(getpass())
+                else:
+                    password = Password(args.password)
+
+                data['password'] = str(password)
+                
+                # Put account information in database
+                store.put(**data)
+            
+            elif args.action == 'get': # Get accounts stored in the database
+                # Construct a dictionary for the results
+                keys = ['id', 'domain', 'username', 'password', 'comment']
+                res = dict(zip(keys, ([('%ss' % k).title()] for k in keys)))
+                
+                # Execute the query and fetch the results
+                accounts = list(store.get(**data))
+                if not accounts:
+                    sys.exit('No results.')
+                for row in accounts:
+                    for k in keys:
+                        res[k].append(str(row[k]))
+                
+                # Get the window's width
+                window = curses.initscr()
+                max_width = window.getmaxyx()[1]
+                curses.endwin()
+
+                # Divide the space between each column to fill the window
+                lcols = dict(zip(keys, (max(map(len, res[k])) for k in keys)))
+                while sum(lcols.values()) + len(keys) * 2 - 2 > max_width:
+                    lcols[max(zip(lcols.values(), lcols.keys()))[1]] -= 1
+
+                # Print the table
+                for i in range(len(accounts) + 1):
+                    print('  '.join(res[k][i].ljust(lcols[k]) for k in keys))
+                    if not i:
+                        print('-' * (sum(lcols.values()) + len(keys) * 2 - 2))
         
-        # Get or generate the account's password
-        if args.password is None:
-            password = Password.generate(args.password_length, args.secure)
-            print('Your password is: %s' % password)
-        elif args.password == '':
-            password = Password(getpass())
+            elif args.action == 'del': # Remove an account from the database
+                for id in args.ids:
+                    store.delete(id)
+
+    except IOError as e:
+        if e.errno == errno.ENOENT:
+            sys.stderr.write('%s\n' % e.strerror)
+            sys.exit(errno.ENOENT)
         else:
-            password = Password(args.password)
-
-        data['password'] = str(password)
-        
-        with Store.open(dump_file, key_file) as store:
-            # Put account information in database
-            store.put(**data)
-    
-    elif args.action == 'get':
-        # Get accounts stored in the database
-        with Store.open(dump_file, key_file) as store:
-            # Construct a dictionary for the results
-            keys = ['id', 'domain', 'username', 'password', 'comment']
-            results = dict(zip(keys, ([('%ss' % k).title()] for k in keys)))
-            
-            # Execute the query and fetch the results
-            response = list(store.get(**data))
-            if not response:
-                sys.exit('No results.')
-            for row in response:
-                for k in keys:
-                    results[k].append(str(row[k]))
-            
-            # Get the window's width
-            window = curses.initscr()
-            max_width = window.getmaxyx()[1]
-            curses.endwin()
-
-            # Divide the space between each column to fill the window
-            lcols = dict(zip(keys, (max(map(len, results[k])) for k in keys)))
-            while sum(lcols.values()) + len(keys) * 2 - 2 > max_width:
-                lcols[max(zip(lcols.values(), lcols.keys()))[1]] -= 1
-
-            # Print the table
-            for i in range(len(response) + 1):
-                print('  '.join(results[k][i].ljust(lcols[k]) for k in keys))
-                if not i:
-                    print('-' * (sum(lcols.values()) + len(keys) * 2 - 2))
-    
-    elif args.action == 'del':
-        # Remove an account from the database
-        with Store.open(dump_file, key_file) as store:
-            for id in args.ids:
-                store.delete(id)
+            raise
