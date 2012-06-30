@@ -92,7 +92,7 @@ class Store(object):
         q_cols = ', '.join(params.keys())
         q_vals = ', '.join('?' * len(params))
         query = "INSERT INTO slots (%s) values (%s)" % (q_cols, q_vals)
-        self._con.execute(query, params.values())
+        self._con.execute(query, list(params.values()))
 
     def delete(self, id):
         """Remove a row from the password list."""
