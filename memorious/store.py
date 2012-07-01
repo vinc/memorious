@@ -34,32 +34,15 @@ class Store(object):
         key_file -- the key file path
         key_size -- the key size (128, 192 or 256 bits for AES)
         """
+
+        self._mem = mem_file
+        self._key = KeyFile(key_file, key_size).key
+
         self.closed = False
 
         # Create a database in memory
         self._con = sqlite3.connect(':memory:')
-
-        # Decrypt SQL text contained in memorious file
-        sql = ''
-        self._key = KeyFile(key_file, key_size).key
-        self._path = mem_file
-        if os.path.isfile(self._path):
-            with open(self._path, 'rb') as f:
-                # Retrieve the initialization vector (IV) transmitted along
-                # with the ciphertext
-                iv = f.read(Cipher.block_size)
-
-                # Retreive and decrypt the ciphertext
-                cipher = Cipher.new(self._key, Cipher.MODE_CFB, iv)
-                while True:
-                    block = f.read(Cipher.block_size)
-                    if not block:
-                        break
-                    sql += cipher.decrypt(block).decode()
-
-            # Restore previous database
-            self._con.executescript(sql)
-        else:
+        if not os.path.isfile(self._mem):
             self._con.execute("""
                 CREATE TABLE slots(
                     id INTEGER PRIMARY KEY,
@@ -69,31 +52,49 @@ class Store(object):
                     comment
                 );
                 """)
+            return
+
+        # Decrypt SQL text contained in memorious file
+        sql = ''
+        with open(self._mem, 'rb') as f:
+            # Retrieve the initialization vector (IV) transmitted along
+            # with the ciphertext
+            iv = f.read(Cipher.block_size)
+
+            # Retreive and decrypt the ciphertext
+            cipher = Cipher.new(self._key, Cipher.MODE_CFB, iv)
+            while True:
+                block = f.read(Cipher.block_size)
+                if not block:
+                    break
+                sql += cipher.decrypt(block).decode()
+
+        # Restore previous database
+        self._con.executescript(sql)
 
     @classmethod
     def open(cls, mem_file, key_file, key_size=256):
         safe = cls(mem_file, key_file, key_size)
         return safe
 
-    def get(self, **params):
+    def get(self, **fields):
         """Generate row matching params in the password list."""
         self._con.row_factory = sqlite3.Row
         query = 'SELECT * FROM slots'
-        values = [val for val in params.values() if val != '']
+        values = [v for v in fields.values() if v]
         if values:
-            query += ' WHERE %s' % ' AND '.join(
-                '%s=?' % key for key in params.keys() if params[key] != ''
-            )
+            keys = (k for k in fields.keys() if fields[k])
+            query += ' WHERE %s' % ' AND '.join('%s=?' % k for k in keys)
         for row in self._con.execute(query, values):
             yield row
 
-    def put(self, **params):
+    def put(self, **fields):
         """Add a new row in the password list."""
-        assert ''.join(params.keys()).isalpha()
-        q_cols = ', '.join(params.keys())
-        q_vals = ', '.join('?' * len(params))
+        assert ''.join(fields.keys()).isalpha()
+        q_cols = ', '.join(fields.keys())
+        q_vals = ', '.join('?' * len(fields))
         query = "INSERT INTO slots (%s) values (%s)" % (q_cols, q_vals)
-        self._con.execute(query, list(params.values()))
+        self._con.execute(query, list(fields.values()))
 
     def delete(self, id):
         """Remove a row from the password list."""
@@ -110,7 +111,7 @@ class Store(object):
         flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
         if os.name == 'nt':
             flags = flags | os.O_BINARY
-        with os.fdopen(os.open(self._path, flags, 0o600), 'wb') as f:
+        with os.fdopen(os.open(self._mem, flags, 0o600), 'wb') as f:
             n = Cipher.block_size
 
             # CFB mode require an initialization vector (IV) which must
