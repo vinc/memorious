@@ -9,7 +9,7 @@ setup(name='Memorious',
     author_email='contact@vincentollivier.com',
     url='https://github.com/vinc/memorious',
     packages=['memorious'],
-    scripts=['scripts/memorious'],
+    scripts=['bin/memorious'],
     license='GNU GPL v3',
     install_requires=['pycrypto']
 )
