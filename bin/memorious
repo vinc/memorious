@@ -96,7 +96,7 @@ if __name__ == "__main__":
     if os.path.isfile(key_file):
         check_permissions(key_file, 0o400)
     elif args.action != 'new':
-        sys.stderr.write("No such key file: '%s'\n" % mem_file)
+        sys.stderr.write("No such key file: '%s'\n" % key_file)
         sys.exit(errno.ENOENT)
 
     if args.action == 'new':
