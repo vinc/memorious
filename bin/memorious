@@ -123,7 +123,7 @@ if __name__ == "__main__":
         data['comment'] = ' '.join(args.comment)
 
     try:
-        with Store.open(args.mem_file, args.key_file) as store:
+        with Store.open(args.mem_file, args.key_file, args.key_size) as store:
             if args.action == 'get': # Get accounts stored in the database
                 # Construct a dictionary for the results
                 keys = ['id', 'domain', 'username', 'password', 'comment']
