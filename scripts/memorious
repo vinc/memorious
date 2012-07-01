@@ -18,6 +18,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import argparse
+import csv
 import curses
 import errno
 import os
@@ -59,6 +60,7 @@ if __name__ == "__main__":
     subparser.add_argument('--domain', default='')
     subparser.add_argument('--username', default='')
     subparser.add_argument('--comment', default='', nargs='*')
+    subparser.add_argument('--csv', action='store_true')
 
     subparser = subparsers.add_parser('put', help='store a new account')
     subparser.add_argument('--domain', default='')
@@ -113,6 +115,12 @@ if __name__ == "__main__":
                 for row in accounts:
                     for k in keys:
                         res[k].append(str(row[k]))
+
+                if args.csv:
+                    writer = csv.writer(sys.stdout)
+                    for i in range(len(res['id'])):
+                        writer.writerow([res[k][i] for k in keys])
+                    sys.exit()
 
                 # Get the window's width
                 width = get_width()
