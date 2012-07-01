@@ -38,7 +38,7 @@ def check_permissions(path, mode):
 
 def get_password(args):
     if args.password is None:
-        password = Password.generate(args.password_length, args.secure)
+        password = str(Password.generate(args.password_length, args.secure))
         print('Your password is: %s' % password)
         return password
     elif args.password == '':
