@@ -57,7 +57,7 @@ if __name__ == "__main__":
     subparsers = parser.add_subparsers(help="try 'SUB-COMMAND --help'",
                                        dest='action')
 
-    parser.add_argument('--dumpfile', default='~/.memorious/store.dump')
+    parser.add_argument('--memfile', default='~/.memorious/store.mem')
     parser.add_argument('--keyfile', default='/tmp/memorious.key')
 
     subparser = subparsers.add_parser('new', help='create a new key file')
@@ -83,9 +83,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    dump_file = os.path.expanduser(args.dumpfile)
-    if os.path.isfile(dump_file):
-        check_permissions(dump_file, 0o600)
+    mem_file = os.path.expanduser(args.memfile)
+    if os.path.isfile(mem_file):
+        check_permissions(mem_file, 0o600)
 
     key_file = os.path.expanduser(args.keyfile)
     if os.path.isfile(key_file):
@@ -103,7 +103,7 @@ if __name__ == "__main__":
                 raise
         print("Key file successfully created at '%s'." % key_file)
         print("Store it somewhere safe and don't lose it!")
-        os.makedirs(os.path.dirname(dump_file), 0o700)
+        os.makedirs(os.path.dirname(mem_file), 0o700)
         sys.exit()
 
     data = {}
@@ -115,7 +115,7 @@ if __name__ == "__main__":
         data['comment'] = ' '.join(args.comment)
 
     try:
-        with Store.open(dump_file, key_file) as store:
+        with Store.open(mem_file, key_file) as store:
             if args.action == 'get': # Get accounts stored in the database
                 # Construct a dictionary for the results
                 keys = ['id', 'domain', 'username', 'password', 'comment']

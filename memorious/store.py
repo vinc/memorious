@@ -30,11 +30,11 @@ from Crypto.Cipher import AES as Cipher
 class Store(object):
     """Manage an encrypted passwords database."""
 
-    def __init__(self, encrypted_dump_file, key_file, key_size=256):
-        """Restore in memory database from encrypted dump file.
+    def __init__(self, mem_file, key_file, key_size=256):
+        """Restore in memory database from memorious file.
 
         Keyword arguments:
-        encrypted_dump_file -- the encrypted dump file path
+        mem_file -- the memorious file path
         key_file -- the key file path
         key_size -- the key size (128, 192 or 256 bits for AES)
         """
@@ -43,10 +43,10 @@ class Store(object):
         # Create a database in memory
         self._con = sqlite3.connect(':memory:')
 
-        # Decrypt database dump file
-        dump = ''
+        # Decrypt SQL text contained in memorious file
+        sql = ''
         self._key = KeyFile(key_file, key_size).key
-        self._path = encrypted_dump_file
+        self._path = mem_file
         if os.path.isfile(self._path):
             with open(self._path, 'rb') as f:
                 # Retrieve the initialization vector (IV) transmitted along
@@ -59,10 +59,10 @@ class Store(object):
                     block = f.read(Cipher.block_size)
                     if not block:
                         break
-                    dump += cipher.decrypt(block).decode()
+                    sql += cipher.decrypt(block).decode()
 
-            # Restore previous database from dump
-            self._con.executescript(dump)
+            # Restore previous database
+            self._con.executescript(sql)
         else:
             print('Creating a new database ...')
             self._con.execute("""
@@ -76,8 +76,8 @@ class Store(object):
                 """)
 
     @classmethod
-    def open(cls, encrypted_dump_file, key_file, key_size=256):
-        safe = cls(encrypted_dump_file, key_file, key_size)
+    def open(cls, mem_file, key_file, key_size=256):
+        safe = cls(mem_file, key_file, key_size)
         return safe
 
     def get(self, **params):
@@ -108,10 +108,10 @@ class Store(object):
         if self.closed:
             return
 
-        # Dump database
-        dump = ''.join(self._con.iterdump())
+        # Dump database in SQL text format
+        sql = ''.join(self._con.iterdump())
 
-        # Encrypt dump to the persistent file
+        # Write encrypted dump to memorious file
         flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
         if os.name == 'nt':
             flags = flags | os.O_BINARY
@@ -128,10 +128,10 @@ class Store(object):
             f.write(iv)
 
             cipher = Cipher.new(self._key, Cipher.MODE_CFB, iv)
-            for i in range(0, len(dump), n):
+            for i in range(0, len(sql), n):
                 # Each block of plaintext is encrypted and written to
                 # the persistent storage file.
-                f.write(cipher.encrypt(dump[i:i+n]))
+                f.write(cipher.encrypt(sql[i:i+n]))
 
         self.closed = True
 
@@ -143,7 +143,7 @@ class Store(object):
             self.close()
         else:
             # An exception occurred. Any changes in the database should be
-            # considered lost and not dumped into the encrypted file.
+            # considered lost and not saved into the memorious file.
             self.closed = True
 
 
