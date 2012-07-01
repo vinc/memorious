@@ -83,35 +83,35 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    mem_file = os.path.expanduser(args.memfile)
-    if os.path.isfile(mem_file):
-        check_permissions(mem_file, 0o600)
+    args.mem_file = os.path.expanduser(args.memfile)
+    if os.path.isfile(args.mem_file):
+        check_permissions(args.mem_file, 0o600)
     elif args.action in ['get', 'del']:
-        sys.stderr.write("No such memorious file: '%s'\n" % mem_file)
+        sys.stderr.write("No such memorious file: '%s'\n" % args.mem_file)
         sys.exit(errno.ENOENT)
     elif args.action == 'put':
         sys.stderr.write('Creating a new database ...\n')
 
-    key_file = os.path.expanduser(args.keyfile)
-    if os.path.isfile(key_file):
-        check_permissions(key_file, 0o400)
+    args.key_file = os.path.expanduser(args.keyfile)
+    if os.path.isfile(args.key_file):
+        check_permissions(args.key_file, 0o400)
     elif args.action != 'new':
-        sys.stderr.write("No such key file: '%s'\n" % key_file)
+        sys.stderr.write("No such key file: '%s'\n" % args.key_file)
         sys.exit(errno.ENOENT)
 
     if args.action == 'new':
         # Create a new key file for a new database
         try:
-            KeyFile.generate(key_file, args.key_size, args.file_size)
+            KeyFile.generate(args.key_file, args.key_size, args.file_size)
         except IOError as e:
             if e.errno == errno.EEXIST:
                 sys.stderr.write('%s\n' % e.strerror)
                 sys.exit(errno.EEXIST)
             else:
                 raise
-        print("Key file successfully created at '%s'." % key_file)
+        print("Key file successfully created at '%s'." % args.key_file)
         print("Store it somewhere safe and don't lose it!")
-        os.makedirs(os.path.dirname(mem_file), 0o700)
+        os.makedirs(os.path.dirname(args.mem_file), 0o700)
         sys.exit()
 
     data = {}
@@ -123,7 +123,7 @@ if __name__ == "__main__":
         data['comment'] = ' '.join(args.comment)
 
     try:
-        with Store.open(mem_file, key_file) as store:
+        with Store.open(args.mem_file, args.key_file) as store:
             if args.action == 'get': # Get accounts stored in the database
                 # Construct a dictionary for the results
                 keys = ['id', 'domain', 'username', 'password', 'comment']
