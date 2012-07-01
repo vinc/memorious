@@ -22,7 +22,9 @@ import string
 
 from random import SystemRandom
 
-# DES, AES, Blowfish
+# Cipher must be a block cipher encryption algorithm
+# capable of operating in cipher feedback (CFB) mode
+# Supported algorithms: AES, Blowfish, DES...
 from Crypto.Cipher import AES as Cipher
 
 class Store(object):
@@ -47,14 +49,18 @@ class Store(object):
         self._path = encrypted_dump_file
         if os.path.isfile(self._path):
             with open(self._path, 'rb') as f:
-                # Need a block cipher encryption algorithm
-                # operating in cipher feedback (CFB) mode
-                cipher = Cipher.new(self._key, Cipher.MODE_CFB)
-                c = f.read(cipher.block_size)
-                while c:
-                    dump = '%s%s' % (dump, cipher.decrypt(c).decode())
-                    c = f.read(cipher.block_size)
-                    cipher = Cipher.new(self._key, Cipher.MODE_CFB, cipher.IV)
+                # Retrieve the initialization vector (IV) transmitted along
+                # with the ciphertext
+                iv = f.read(Cipher.block_size)
+
+                # Retreive and decrypt the ciphertext
+                cipher = Cipher.new(self._key, Cipher.MODE_CFB, iv)
+                while True:
+                    block = f.read(Cipher.block_size)
+                    if not block:
+                        break
+                    dump += cipher.decrypt(block).decode()
+
             # Restore previous database from dump
             self._con.executescript(dump)
         else:
@@ -107,11 +113,22 @@ class Store(object):
 
         # Encrypt dump to the persistent file
         with open(self._path, 'wb') as f:
-            cipher = Cipher.new(self._key, Cipher.MODE_CFB)
-            while dump:
-                f.write(cipher.encrypt(dump[:cipher.block_size]))
-                dump = dump[cipher.block_size:]
-                cipher = Cipher.new(self._key, Cipher.MODE_CFB, cipher.IV)
+            n = Cipher.block_size
+
+            # CFB mode require an initialization vector (IV) which must
+            # be unpredictable. The same IV will be used to encrypt a
+            # plaintext and decrypt the corresponding ciphertext.
+            iv = os.urandom(n)
+
+            # IV need not to be secret, so it is transmitted along with
+            # the ciphertext.
+            f.write(iv)
+
+            cipher = Cipher.new(self._key, Cipher.MODE_CFB, iv)
+            for i in range(0, len(dump), n):
+                # Each block of plaintext is encrypted and written to
+                # the persistent storage file.
+                f.write(cipher.encrypt(dump[i:i+n]))
 
         self.closed = True
 
