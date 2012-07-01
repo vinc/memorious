@@ -112,7 +112,10 @@ class Store(object):
         dump = ''.join(self._con.iterdump())
 
         # Encrypt dump to the persistent file
-        with open(self._path, 'wb') as f:
+        flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+        if os.name == 'nt':
+            flags = flags | os.O_BINARY
+        with os.fdopen(os.open(self._path, flags, 0o600), 'wb') as f:
             n = Cipher.block_size
 
             # CFB mode require an initialization vector (IV) which must
@@ -166,7 +169,10 @@ class KeyFile(object):
         if os.path.isfile(path):
             #raise FileExistsError("Key file exist: '%s'" % key_file)
             raise IOError(errno.EEXIST, "Key file exist: '%s'" % path)
-        with open(path, 'wb') as f:
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+        if os.name == 'nt':
+            flags = flags | os.O_BINARY
+        with os.fdopen(os.open(path, flags, 0o400), 'wb') as f:
             f.write(os.urandom(file_size))
         return cls(path, key_size)
 

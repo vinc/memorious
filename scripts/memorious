@@ -23,10 +23,18 @@ import curses
 import errno
 import os
 import sys
+import stat
 
 from getpass import getpass
 
 from memorious.store import Store, Password, KeyFile
+
+def check_permissions(path, mode):
+    msg = "Warning: '%s' permissions should be changed from %d to %d\n"
+    o = lambda x: int(oct(x)[2:])
+    st_imode = stat.S_IMODE(os.lstat(path).st_mode)
+    if not st_imode == mode:
+        sys.stderr.write(msg % (path, o(st_imode), o(mode)))
 
 def get_password(args):
     if args.password is None:
@@ -76,7 +84,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     dump_file = os.path.expanduser(args.dumpfile)
+    if os.path.isfile(dump_file):
+        check_permissions(dump_file, 0o600)
+
     key_file = os.path.expanduser(args.keyfile)
+    if os.path.isfile(key_file):
+        check_permissions(key_file, 0o400)
 
     if args.action == 'new':
         # Create a new key file for a new database
