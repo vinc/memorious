@@ -15,12 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import errno
 import os
 import sqlite3
-import string
 
-from random import SystemRandom
+from memorious.keyfile import KeyFile
 
 # Cipher must be a block cipher encryption algorithm
 # capable of operating in cipher feedback (CFB) mode
@@ -144,62 +142,3 @@ class Store(object):
             # An exception occurred. Any changes in the database should be
             # considered lost and not saved into the memorious file.
             self.closed = True
-
-
-class KeyFile(object):
-
-    def __init__(self, path, key_size=256):
-        self.path = path
-        self.size = key_size
-
-    @property
-    def key(self):
-        try:
-            with open(self.path, 'rb') as f:
-                return f.read(self.size // 8)
-        except IOError:
-            #raise FileNotFoundError("No such key file: '%s'" % self.path)
-            raise IOError(errno.ENOENT, "No such key file: '%s'" % self.path)
-
-    @classmethod
-    def generate(cls, path, key_size=256, file_size=1024):
-        """Generate a new key file."""
-        assert file_size >= key_size
-        if os.path.isfile(path):
-            #raise FileExistsError("Key file exist: '%s'" % key_file)
-            raise IOError(errno.EEXIST, "Key file exist: '%s'" % path)
-        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
-        if os.name == 'nt':
-            flags = flags | os.O_BINARY
-        with os.fdopen(os.open(path, flags, 0o400), 'wb') as f:
-            f.write(os.urandom(file_size))
-        return cls(path, key_size)
-
-class Password(object):
-    def __init__(self, password):
-        self.password = password
-
-    def __repr__(self):
-        return self.password
-
-    def is_strong(self):
-        raise NotImplementedError
-
-    @classmethod
-    def generate(cls, length, secure):
-        alphabet = string.ascii_letters + string.digits
-        if secure:
-            alphabet += string.punctuation
-
-        # Uses the os.urandom() function for random numbers generator source
-        rand = SystemRandom()
-
-        # Shuffle the alphabet a random number of times
-        perm_list = list(alphabet)
-        for i in range(rand.randint(128, 256)):
-            rand.shuffle(perm_list)
-
-        # Randomly choose the password in this alphabet
-        password = ''.join(rand.sample(perm_list, length))
-
-        return cls(password)

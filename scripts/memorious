@@ -27,7 +27,9 @@ import stat
 
 from getpass import getpass
 
-from memorious.store import Store, Password, KeyFile
+from memorious.store import Store
+from memorious.keyfile import KeyFile
+from memorious.password import Password
 
 def check_permissions(path, mode):
     msg = "Warning: '%s' permissions should be changed from %d to %d\n"
