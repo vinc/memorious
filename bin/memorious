@@ -114,13 +114,13 @@ if __name__ == "__main__":
         os.makedirs(os.path.dirname(args.mem_file), 0o700)
         sys.exit()
 
-    data = {}
+    fields = {}
     if 'domain' in args and args.domain is not None:
-        data['domain'] = args.domain
+        fields['domain'] = args.domain
     if 'username' in args and args.username is not None:
-        data['username'] = args.username
+        fields['username'] = args.username
     if 'comment' in args and args.comment is not None:
-        data['comment'] = ' '.join(args.comment)
+        fields['comment'] = ' '.join(args.comment)
 
     try:
         with Store.open(args.mem_file, args.key_file, args.key_size) as store:
@@ -130,7 +130,7 @@ if __name__ == "__main__":
                 res = dict(zip(keys, ([k.title() + 's'] for k in keys)))
 
                 # Execute the query and fetch the results
-                accounts = list(store.get(**data))
+                accounts = list(store.get(**fields))
                 if not accounts:
                     sys.exit('No results.')
                 for row in accounts:
@@ -158,15 +158,15 @@ if __name__ == "__main__":
                         print('-' * (sum(lcols.values()) + len(keys) * 2 - 2))
 
             elif args.action == 'put': # Put a new account in the database
-                if not data:
+                if not fields:
                     parser.print_help()
                     sys.exit()
 
                 # Get or generate the account's password
-                data['password'] = get_password(args)
+                fields['password'] = get_password(args)
 
                 # Put account information in database
-                store.put(**data)
+                store.put(**fields)
 
             elif args.action == 'del': # Remove an account from the database
                 for id in args.ids:
