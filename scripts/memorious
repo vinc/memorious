@@ -86,10 +86,18 @@ if __name__ == "__main__":
     mem_file = os.path.expanduser(args.memfile)
     if os.path.isfile(mem_file):
         check_permissions(mem_file, 0o600)
+    elif args.action in ['get', 'del']:
+        sys.stderr.write("No such memorious file: '%s'\n" % mem_file)
+        sys.exit(errno.ENOENT)
+    elif args.action == 'put':
+        sys.stderr.write('Creating a new database ...\n')
 
     key_file = os.path.expanduser(args.keyfile)
     if os.path.isfile(key_file):
         check_permissions(key_file, 0o400)
+    elif args.action != 'new':
+        sys.stderr.write("No such key file: '%s'\n" % mem_file)
+        sys.exit(errno.ENOENT)
 
     if args.action == 'new':
         # Create a new key file for a new database

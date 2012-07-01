@@ -64,7 +64,6 @@ class Store(object):
             # Restore previous database
             self._con.executescript(sql)
         else:
-            print('Creating a new database ...')
             self._con.execute("""
                 CREATE TABLE slots(
                     id INTEGER PRIMARY KEY,
