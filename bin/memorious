@@ -57,8 +57,8 @@ if __name__ == "__main__":
     subparsers = parser.add_subparsers(help="try 'SUB-COMMAND --help'",
                                        dest='action')
 
-    parser.add_argument('--memfile', default='~/.memorious/store.mem')
-    parser.add_argument('--keyfile', default='/tmp/memorious.key')
+    parser.add_argument('--mem-file', default='~/.memorious/store.mem')
+    parser.add_argument('--key-file', default='/tmp/memorious.key')
     parser.add_argument('--key-size', default=256, type=int)
     parser.add_argument('--cipher', default='aes', choices=['aes'])
 
@@ -84,7 +84,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    args.mem_file = os.path.expanduser(args.memfile)
+    args.mem_file = os.path.expanduser(args.mem_file)
     if os.path.isfile(args.mem_file):
         check_permissions(args.mem_file, 0o600)
     elif args.action in ['get', 'del']:
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     elif args.action == 'put':
         sys.stderr.write('Creating a new database ...\n')
 
-    args.key_file = os.path.expanduser(args.keyfile)
+    args.key_file = os.path.expanduser(args.key_file)
     if os.path.isfile(args.key_file):
         check_permissions(args.key_file, 0o400)
     elif args.action != 'new':
