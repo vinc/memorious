@@ -1,7 +1,7 @@
 Memorious
 =========
 
-Memorious is minimalist command line password manager.
+Minimalist command line password manager.
 
 
 Synopsis
