@@ -16,27 +16,35 @@
 import os
 import sqlite3
 
-from memorious.keyfile import KeyFile
-
-# Cipher must be a block cipher encryption algorithm
+# self._algo must be a block cipher encryption algorithm
 # capable of operating in cipher feedback (CFB) mode
 # Supported algorithms: AES, Blowfish, DES...
-from Crypto.Cipher import AES as Cipher
+from Crypto.Cipher import AES
+
+from memorious.keyfile import KeyFile
 
 class Store(object):
     """Manage an encrypted passwords database."""
 
-    def __init__(self, mem_file, key_file, key_size=256):
+    def __init__(self, mem_file, key_file, key_size=256, algorithm='aes'):
         """Restore in memory database from memorious file.
 
         Keyword arguments:
         mem_file -- the memorious file path
         key_file -- the key file path
         key_size -- the key size (128, 192 or 256 bits for AES)
+        cipher   -- the cipher name (aes)
         """
 
         self._mem = mem_file
         self._key = KeyFile(key_file, key_size).key
+
+        if algorithm == 'aes':
+            if key_size not in [128, 192, 256]:
+                raise ValueError
+            self._algo = AES
+        else:
+            raise NotImplementedError
 
         self.closed = False
 
@@ -59,12 +67,12 @@ class Store(object):
         with open(self._mem, 'rb') as f:
             # Retrieve the initialization vector (IV) transmitted along
             # with the ciphertext
-            iv = f.read(Cipher.block_size)
+            iv = f.read(self._algo.block_size)
 
             # Retreive and decrypt the ciphertext
-            cipher = Cipher.new(self._key, Cipher.MODE_CFB, iv)
+            cipher = self._algo.new(self._key, self._algo.MODE_CFB, iv)
             while True:
-                block = f.read(Cipher.block_size)
+                block = f.read(self._algo.block_size)
                 if not block:
                     break
                 sql += cipher.decrypt(block).decode()
@@ -73,9 +81,8 @@ class Store(object):
         self._con.executescript(sql)
 
     @classmethod
-    def open(cls, mem_file, key_file, key_size=256):
-        safe = cls(mem_file, key_file, key_size)
-        return safe
+    def open(cls, **args):
+        return cls(**args)
 
     def get(self, **fields):
         """Generate row matching params in the password list."""
@@ -112,7 +119,7 @@ class Store(object):
         if os.name == 'nt':
             flags = flags | os.O_BINARY
         with os.fdopen(os.open(self._mem, flags, 0o600), 'wb') as f:
-            n = Cipher.block_size
+            n = self._algo.block_size
 
             # CFB mode require an initialization vector (IV) which must
             # be unpredictable. The same IV will be used to encrypt a
@@ -123,7 +130,7 @@ class Store(object):
             # the ciphertext.
             f.write(iv)
 
-            cipher = Cipher.new(self._key, Cipher.MODE_CFB, iv)
+            cipher = self._algo.new(self._key, self._algo.MODE_CFB, iv)
             for i in range(0, len(sql), n):
                 # Each block of plaintext is encrypted and written to
                 # the persistent storage file.

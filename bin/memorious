@@ -59,9 +59,10 @@ if __name__ == "__main__":
 
     parser.add_argument('--memfile', default='~/.memorious/store.mem')
     parser.add_argument('--keyfile', default='/tmp/memorious.key')
+    parser.add_argument('--key-size', default=256, type=int)
+    parser.add_argument('--cipher', default='aes', choices=['aes'])
 
     subparser = subparsers.add_parser('new', help='create a new key file')
-    subparser.add_argument('--key-size', default=256, type=int)
     subparser.add_argument('--file-size', default=1024, type=int)
 
     subparser = subparsers.add_parser('get', help='get stored accounts')
@@ -123,7 +124,13 @@ if __name__ == "__main__":
         fields['comment'] = ' '.join(args.comment)
 
     try:
-        with Store.open(args.mem_file, args.key_file, args.key_size) as store:
+        config = {
+            'mem_file': args.mem_file,
+            'key_file': args.key_file,
+            'key_size': args.key_size,
+            'algorithm': args.cipher
+        }
+        with Store.open(**config) as store:
             if args.action == 'get': # Get accounts stored in the database
                 # Construct a dictionary for the results
                 keys = ['id', 'domain', 'username', 'password', 'comment']
