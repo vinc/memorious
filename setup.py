@@ -10,6 +10,7 @@ setup(name='Memorious',
     url='https://github.com/vinc/memorious',
     packages=['memorious'],
     scripts=['bin/memorious'],
+    test_suite='memorious.test',
     license='GNU GPL v3',
     install_requires=['pycrypto']
 )
