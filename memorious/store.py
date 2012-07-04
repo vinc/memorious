@@ -21,8 +21,7 @@ from random import SystemRandom
 
 # self._algo must be a block cipher encryption algorithm
 # capable of operating in cipher feedback (CFB) mode
-# Supported algorithms: AES, Blowfish, DES...
-from Crypto.Cipher import AES
+from Crypto.Cipher import AES, Blowfish
 
 from memorious.keyfile import KeyFile
 
@@ -36,7 +35,7 @@ class Store(object):
         mem_file -- the memorious file path
         key_file -- the key file path
         key_size -- the key size (128, 192 or 256 bits for AES)
-        cipher   -- the cipher name (aes)
+        cipher   -- the cipher name (aes, blowfish)
         """
 
         self._mem = mem_file
@@ -46,6 +45,10 @@ class Store(object):
             if key_size not in [128, 192, 256]:
                 raise ValueError
             self._algo = AES
+        elif algorithm == 'blowfish':
+            if not (32 <= key_size <= 448):
+                raise ValueError
+            self._algo = Blowfish
         else:
             raise NotImplementedError
 
