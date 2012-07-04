@@ -14,7 +14,10 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import string
 import sqlite3
+
+from random import SystemRandom
 
 # self._algo must be a block cipher encryption algorithm
 # capable of operating in cipher feedback (CFB) mode
@@ -114,11 +117,14 @@ class Store(object):
         # Dump database in SQL text format
         sql = ''.join(self._con.iterdump())
 
-        # Write encrypted dump to memorious file
+        # Write encrypted dump to temporary file
+        randname = ''.join(SystemRandom().sample(string.ascii_lowercase, 8))
+        tmp = '%s/%s.mem' % (os.path.dirname(self._mem), randname)
+
         flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
         if os.name == 'nt':
             flags = flags | os.O_BINARY
-        with os.fdopen(os.open(self._mem, flags, 0o600), 'wb') as f:
+        with os.fdopen(os.open(tmp, flags, 0o600), 'wb') as f:
             n = self._algo.block_size
 
             # CFB mode require an initialization vector (IV) which must
@@ -135,6 +141,15 @@ class Store(object):
                 # Each block of plaintext is encrypted and written to
                 # the persistent storage file.
                 f.write(cipher.encrypt(sql[i:i+n]))
+
+            # Write to disk
+            f.flush()
+            os.fsync(f.fileno())
+
+        # Replace old memorious file
+        os.rename(self._mem, self._mem + '~')
+        os.rename(tmp, self._mem)
+        os.unlink(self._mem + '~')
 
         self.closed = True
 
