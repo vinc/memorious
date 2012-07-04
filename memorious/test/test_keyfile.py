@@ -36,12 +36,16 @@ class TestKeyFile(unittest.TestCase):
                 KeyFile.generate(path)
         self.assertFalse(os.path.exists(path))
         key_file = KeyFile.generate(path)
+        self.assertTrue(os.path.exists(path))
+
         n = self.default_key_size // 8
         self.assertEqual(len(key_file.key), n)
         with open(path, 'rb') as f:
             content = f.read()
             self.assertEqual(len(content), self.default_file_size // 8)
             self.assertEqual(key_file.key, content[:n])
+
+        os.unlink(path)
 
 if __name__ == '__main__':
     unittest.main()
