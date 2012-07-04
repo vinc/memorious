@@ -20,7 +20,7 @@ class KeyFile(object):
 
     def __init__(self, path, key_size=256):
         self.path = path
-        self.size = key_size
+        self.size = key_size # bits
 
     @property
     def key(self):
@@ -42,5 +42,5 @@ class KeyFile(object):
         if os.name == 'nt':
             flags = flags | os.O_BINARY
         with os.fdopen(os.open(path, flags, 0o400), 'wb') as f:
-            f.write(os.urandom(file_size))
+            f.write(os.urandom(file_size // 8))
         return cls(path, key_size)
