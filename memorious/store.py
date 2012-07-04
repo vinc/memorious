@@ -146,10 +146,17 @@ class Store(object):
             f.flush()
             os.fsync(f.fileno())
 
+        # Backup old memorious file
+        is_new = not os.path.exists(self._mem)
+        if not is_new:
+            os.rename(self._mem, self._mem + '~')
+
         # Replace old memorious file
-        os.rename(self._mem, self._mem + '~')
         os.rename(tmp, self._mem)
-        os.unlink(self._mem + '~')
+
+        # Delete backup
+        if not is_new:
+            os.unlink(self._mem + '~')
 
         self.closed = True
 
