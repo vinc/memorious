@@ -88,7 +88,7 @@ class Store(object):
         return cls(**args)
 
     def get(self, **fields):
-        """Generate row matching params in the password list."""
+        """Generate rows matching fields in the accounts table."""
         self._con.row_factory = sqlite3.Row
         query = 'SELECT * FROM slots'
         values = [v for v in fields.values() if v]
@@ -99,7 +99,7 @@ class Store(object):
             yield row
 
     def put(self, **fields):
-        """Add a new row in the password list."""
+        """Add a new row in the accounts table."""
         assert ''.join(fields.keys()).isalpha()
         q_cols = ', '.join(fields.keys())
         q_vals = ', '.join('?' * len(fields))
@@ -107,7 +107,7 @@ class Store(object):
         self._con.execute(query, list(fields.values()))
 
     def delete(self, id):
-        """Remove a row from the password list."""
+        """Remove a row from the accounts table."""
         self._con.execute('DELETE FROM slots WHERE id=?', (id,))
 
     def close(self):
