@@ -42,9 +42,9 @@ def get_password(args):
         print('Your password is: %s' % password)
         return password
     elif args.password == '':
-        return Password(getpass())
+        return str(Password(getpass()))
     else:
-        return Password(args.password)
+        return str(Password(args.password))
 
 def get_width():
     window = curses.initscr()
