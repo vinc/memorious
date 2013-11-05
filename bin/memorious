@@ -48,11 +48,11 @@ def get_password(args):
 
 def get_width():
     window = curses.initscr()
-    width = window.getmaxyx()[1]
+    _, width = window.getmaxyx()
     curses.endwin()
     return width
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     ciphers = ['aes', 'blowfish']
 
     parser = argparse.ArgumentParser(description='Manage website accounts.')
