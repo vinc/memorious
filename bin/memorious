@@ -23,6 +23,7 @@ import os
 import sys
 import stat
 
+from subprocess import Popen, PIPE
 from getpass import getpass
 
 from memorious.store import Store
@@ -52,6 +53,10 @@ def get_width():
     curses.endwin()
     return width
 
+def set_clipboard(s):
+    p = Popen(['xclip'], stdin=PIPE)
+    p.communicate(input=s.encode('utf-8'))
+
 if __name__ == '__main__':
     ciphers = ['aes', 'blowfish']
 
@@ -71,6 +76,7 @@ if __name__ == '__main__':
     subparser.add_argument('--domain', default='')
     subparser.add_argument('--username', default='')
     subparser.add_argument('--comment', default='', nargs='*')
+    subparser.add_argument('--copy', action='store_true')
     subparser.add_argument('--csv', action='store_true')
 
     subparser = subparsers.add_parser('put', help='store a new account')
@@ -144,7 +150,11 @@ if __name__ == '__main__':
                     sys.exit('No results.')
                 for row in accounts:
                     for k in keys:
-                        res[k].append(str(row[k]))
+                        v = str(row[k])
+                        if k == 'password' and args.copy:
+                            set_clipboard(v)
+                            v = '***copied***'
+                        res[k].append(v)
 
                 if args.csv:
                     writer = csv.writer(sys.stdout)
