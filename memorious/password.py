@@ -33,15 +33,8 @@ class Password(object):
         if secure:
             alphabet += string.punctuation
 
-        # Uses the os.urandom() function for random numbers generator source
-        rand = SystemRandom()
+        rand = SystemRandom() # Query '/dev/urandom' on Unix
 
-        # Shuffle the alphabet a random number of times
-        perm_list = list(alphabet)
-        for i in range(rand.randint(128, 256)):
-            rand.shuffle(perm_list)
-
-        # Randomly choose the password in this alphabet
-        password = ''.join(rand.sample(perm_list, length))
+        password = ''.join(rand.choice(alphabet) for _ in range(length))
 
         return cls(password)
