@@ -12,5 +12,5 @@ setup(name='Memorious',
     scripts=['bin/memorious'],
     test_suite='memorious.test',
     license='GNU GPL v3',
-    install_requires=['pycrypto']
+    install_requires=['argparse', 'pycrypto']
 )
