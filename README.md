@@ -98,4 +98,4 @@ Try `memorious --help` for advanced options.
 License
 -------
 
-Copyright (C) 2010-2012 Vincent Ollivier. Released under GNU GPL License v3.
+Copyright (C) 2010-2013 Vincent Ollivier. Released under GNU GPL License v3.
