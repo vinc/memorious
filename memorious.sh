@@ -50,7 +50,7 @@ new_cmd() {
 get_cmd() {
   res=$($decrypt)
   if [ -n "$domain" ]; then
-    res=$(echo "$res" | grep "^$domain;")
+    res=$(echo "$res" | grep "^[^;]*$domain[^;]*;")
   fi
   if [ -n "$opt_copy" ]; then
     echo "$res" | awk -F ";" 'END { printf "%s", $3 }' | xclip -i
