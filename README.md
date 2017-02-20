@@ -7,95 +7,73 @@ Minimalist command line password manager.
 Synopsis
 --------
 
-Memorious is using a SQLite database in memory to store website accounts 
-when it is running and otherwise an encrypted SQL dump is stored on the disk
-using AES, a block cipher encryption algorithm, operating in cipher feedback
-(CFB) mode. This algorithm is implemented by PyCrypto.
+Memorious is just a small shell script wrapping the classic process of
+storing your passwords in a CSV file encrypted by GPG with AES-256 and
+a keyfile.
 
-Your website accounts should be safe when Memorious is not running and if your
-key file is stored on multiple removable media.
-
-This project is not mature yet so feel free to review the source code before
-using it seriously. Fortunately it is less than 300 lines of Python code ;)
+This program used to be written in Python and to rely on PyCrypto with
+a SQLite database loaded on the fly in memory but this new version is
+faster and simpler.
 
 
 Installation
 ------------
 
-To install Memorious from source:
+To install `memorious` from source:
 
     $ git clone git://github.com/vinc/memorious.git
     $ cd memorious
-    $ python setup.py install
+    $ sudo cp memorious.sh /usr/local/bin/memorious
+    $ sudo chmod a+x /usr/local/bin/memorious
+
+You will need `gpg` and optionally `xclip` to use this program.
 
 
 Usage
 -----
 
-Start by generating a new key file:
+Create a keyfile to encrypt and decrypt the memfile:
 
     $ memorious new
 
-By default an AES 256 bits key is generated inside a 1024 bits file
-located in `/tmp/memorious.key`.
+Those two files are stored in `~/.memorious`.
 
-Note that with this key file anyone can read all your accounts and without
-it obviously no one can, not even you. So take care of this file and move
-it to somewhere safe before your next reboot.
+Note: in the future this program may evolve to rely on storing a passphrase
+in `gpg-agent`, but for now it is up to you to decide how best to secure the
+content of this directory so that the keyfile is not readable when not in use.
 
+Generate a password for an account and copy it to clipboard:
 
-Storing a new account is easy:
+    $ memorious set --domain example.com --username alice --copy
+    Generated password: *copied*
 
-    $ memorious put --domain example.org --username bob               
-    Your password is: gdMPKLIJvWCZEnGS
+Add an account with an existing password:
 
-A new password will be generated using `/dev/urandom` on UNIX-like system
-and `CryptGenRandom` on Windows. You can also use `--password foo` to set
-`foo` as a password or `--password` without argument to get a prompt for
-typing it without echoing.
+    $ memorious set --domain example.com --username bob --password secret
 
-Some optional arguments allow to specify the password length or make it
-more secure by adding punctuation characters.
+List all accounts:
 
-The database is stored in an encrypted SQL text format saved by default in
-`~/.memorious/store.mem` along with the initialization vector (IV) used by
-the encryption algorithm.
+    $ memorious get
+    domain       username  password          comment
+    example.com  alice     QFzcxisbkt2a5+fU
+    example.com  bob       secret
+    github.com   alice     Zc8Uid/cuYNU5p2u
 
+Filter accounts by domain:
 
-The same arguments work for listing accounts:
+    $ memorious get --domain example.com
+    domain       username  password          comment
+    example.com  alice     QFzcxisbkt2a5+fU
+    example.com  bob       secret
 
-    $ memorious get               
-    Ids  Domains      Usernames  Passwords         Comments       
-    -------------------------------------------------------
-    1    example.org  bob        H7Q2qZN6cjxvTase         
-    2    example.org  alice      qkUJ3WIV08ERGLov         
-    3    test.com     bob        oYf9XNKe3B4U6QTV
+Get a password for an account:
 
-    $ memorious get --domain example.org               
-    Ids  Domains      Usernames  Passwords         Comments       
-    -------------------------------------------------------
-    1    example.org  bob        H7Q2qZN6cjxvTase         
-    2    example.org  alice      qkUJ3WIV08ERGLov         
-
-    $ memorious get --domain example.org --username bob  
-    Ids  Domains      Usernames  Passwords         Comments       
-    -------------------------------------------------------
-    1    example.org  bob        H7Q2qZN6cjxvTase         
-
-
-Finally you can delete a single row by its id:
-
-    $ memorious del 2
-
-Or a list of rows:
-
-    $ memorious del $(seq 1 10)
-
-
-Try `memorious --help` for advanced options.
+    $ memorious get --domain example.com --username alice --copy
+    domain       username  password  comment
+    example.com  alice     *copied*
 
 
 License
 -------
 
-Copyright (C) 2010-2013 Vincent Ollivier. Released under GNU GPL License v3.
+Copyright (C) 2010-2017 Vincent Ollivier. Released under GNU GPL License v3.
