@@ -30,7 +30,7 @@ while true; do
     -d | --domain)     domain=$2; shift 2;;
     -c | --comment)   comment=$2; shift 2;;
     -u | --username) username=$2; shift 2;;
-    -p | --passname) passname=$2; shift 2;;
+    -p | --password) password=$2; shift 2;;
     --) shift; break;;
   esac
 done
