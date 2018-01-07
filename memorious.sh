@@ -71,7 +71,6 @@ set_cmd() {
       echo "Generated password: $password"
     fi
   fi
-  comment="$4"
   if [ -e $mem ]; then
     $decrypt >&3
     rm $mem
