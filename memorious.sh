@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
 
@@ -16,8 +16,8 @@ rm "$tmp"
 cmd="$1"
 shift
 
-args=$(getopt -u -o xd:u:p:c: -l copy,domain:,username:,password:,comment: -- $*)
-set -- $args
+args=$(getopt -u -o xd:u:p:c: -l copy,domain:,username:,password:,comment: -- "$@")
+eval set -- "$args"
 
 opt_copy=
 domain=
@@ -36,15 +36,15 @@ while true; do
 done
 
 rand() {
-  base64 /dev/urandom | head -c $1
+  base64 /dev/urandom | head -c "$1"
 }
 
 new_cmd() {
   if [ -e "$key" ]; then
     echo "Error: keyfile '$key' exists"; exit 1
   fi
-  mkdir -p $(dirname $key)
-  rand 1024 > $key
+  mkdir -p "$(dirname "$key")"
+  rand 1024 > "$key"
 }
 
 get_cmd() {
@@ -58,7 +58,7 @@ get_cmd() {
   else
     out=$(echo "$res" | awk -F";" '{ print $1 " " $2 " " $3 " " $4 }')
   fi
-  echo -e "domain username password comment\n$out" | column -t
+  echo -e "domain username password comment\\n$out" | column -t
 }
 
 set_cmd() {
@@ -66,14 +66,14 @@ set_cmd() {
     password=$(rand 16)
     if [ -n "$opt_copy" ]; then
       echo "Generated password: *copied*"
-      echo $password | xclip -i
+      echo "$password" | xclip -i
     else
       echo "Generated password: $password"
     fi
   fi
-  if [ -e $mem ]; then
+  if [ -e "$mem" ]; then
     $decrypt >&3
-    rm $mem
+    rm "$mem"
   fi
   echo "$domain;$username;$password;$comment" >&3
   $encrypt /dev/fd/3
@@ -82,7 +82,7 @@ set_cmd() {
 edit_cmd() {
   $decrypt >&3
   $EDITOR /dev/fd/3
-  rm $mem #TODO: do this only if next command succeed
+  rm "$mem" #TODO: do this only if next command succeed
   $encrypt /dev/fd/3
 }
 
